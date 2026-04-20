@@ -11,13 +11,15 @@
 - **🚀 Real-time 3D Visualization**: Explore complex iteration domains (including 3D Diamond/Octahedron shapes) using Three.js and React-Three-Fiber.
 - **🛠️ Interactive Source Editor**: Edit loop bounds and patterns directly. Supports rectangular and non-rectangular (polyhedral) domains.
 - **🔄 Polyhedral Transformations**:
-  - **Identity**: Standard loop execution.
-  - **Loop Skewing**: Transform loops for parallelism.
-  - **Interchange (I, J)**: Swap loop orders to improve cache locality.
-  - **Matrix Mult Optimization**: specialized (I, K, J) order for high-performance matrix multiplication.
-- **🔦 Node Highlighting**: Input specific $(i, j, k)$ coordinates to see them glow in the 3D space with real-time lighting effects.
-- **📐 Mathematical Insights**: Live LaTeX rendering of Iteration Domain inequalities ($\mathcal{D}$) and Transformation Matrices ($T$).
-- **💻 Optimized Code Generation**: See the resulting optimized C code for any transformation in real-time.
+  - **Identity**: The baseline "as-written" loop execution order. Useful for comparing original behavior against optimized versions.
+  - **Loop Skewing**: Offsets loop indices (e.g., $j' = j + i$). This is a fundamental technique to **break dependencies**, enabling "wave-front" parallelism where multiple iterations can run simultaneously.
+  - **Loop Interchange (I, J)**: Swaps the nesting order of loops. Crucial for **Cache Locality**—by ensuring the innermost loop accesses memory contiguously, we drastically reduce cache misses.
+  - **Matrix Mult Optimization**: A specialized (I, K, J) reordering. In matrix multiplication ($C = A \times B$), this order ensures that the inner loop performs a streaming accumulation, maximizing CPU throughput.
+- **🔦 Interactive Debugging (Node Highlighting)**: Trace the execution of a specific iteration. By inputting $(i, j, k)$ coordinates, the corresponding node glows in the 3D space, allowing you to visualize where a specific calculation "lives" within the transformed domain.
+- **📐 Mathematical Insights (Formalism)**:
+  - **Iteration Domain ($\mathcal{D}$)**: Live LaTeX rendering of the system of linear inequalities that define the "shape" of the computation.
+  - **Transformation Matrix ($T$)**: Visual representation of the linear mapping used by the polyhedral engine to reorder the execution.
+- **💻 Optimized Code Generation**: Bridges the gap between abstract math and real-world implementation. See the resulting C code for any transformation, showing exactly how the loops are rewritten.
 
 ---
 
