@@ -55,14 +55,43 @@
 
 ---
 
+## 📂 Project Architecture
+
+This project is modularly structured to separate mathematical logic from visual representation and UI management. Below is a guide to the core components:
+
+### 🧠 Core Logic
+- **[`polyhedralEngine.js`](file:///c:/Users/HP/OneDrive/Desktop/CompDeg_hack/src/polyhedralEngine.js)**: The mathematical heart of the application.
+  - Defines transformation matrices ($T$) for Skewing, Interchange, etc.
+  - Generates iteration points for different domain types (Rectangular vs. Diamond).
+  - Handles the mapping of original points $\vec{x}$ to transformed points $\vec{x}'$.
+  - Generates optimized C code snippets based on the active transformation.
+
+### 🎨 Visuals & UI
+- **[`App.jsx`](file:///c:/Users/HP/OneDrive/Desktop/CompDeg_hack/src/App.jsx)**: The main entry point for the UI.
+  - Manages application state (loop bounds, selected transformation, highlighted nodes).
+  - Implements the sidebar controls and the real-time code editor.
+  - Coordinates communication between the UI and the 3D visualization.
+- **[`IterationSpace.jsx`](file:///c:/Users/HP/OneDrive/Desktop/CompDeg_hack/src/IterationSpace.jsx)**: The 3D Rendering Engine.
+  - Built with `react-three-fiber` and `Three.js`.
+  - Renders the iteration points as 3D spheres (nodes) and connects them with lines to show the flow.
+  - Implements smooth animations when the transformation matrix changes.
+  - Handles real-time lighting and camera controls.
+
+### ⚙️ Infrastructure
+- **[`main.jsx`](file:///c:/Users/HP/OneDrive/Desktop/CompDeg_hack/src/main.jsx)**: Standard React entry point that bootstraps the app.
+- **[`index.css`](file:///c:/Users/HP/OneDrive/Desktop/CompDeg_hack/src/index.css)**: Contains the "Neon-Glassmorphism" design system, defining the glow effects, glass panels, and typography.
+
+---
+
 ## 📖 How it Works
 
-The tool uses a **Polyhedral Engine** to map original iteration points $(i, j, k)$ through a transformation matrix $T$:
-$$ \vec{x}' = T \vec{x} $$
-Where $\vec{x}$ is the original iteration vector and $\vec{x}'$ is the transformed vector in the new iteration space.
+The tool operates on the principle that any nested loop can be represented as a set of integer points within a polyhedron (the **Iteration Domain** $\mathcal{D}$).
 
-For the **Diamond Loop** pattern, the domain is defined by:
-$$ \mathcal{D} = \{ (i, j, k) \in \mathbb{Z}^3 \mid |i| + |j| + |k| \le N \} $$
+1. **Domain Generation**: Based on the user's input (e.g., $N=5$), `polyhedralEngine.js` calculates all valid $(i, j, k)$ coordinates.
+2. **Transformation**: When a transformation is selected, each point is multiplied by a matrix $T$:
+   $$ \begin{bmatrix} i' \\ j' \\ k' \end{bmatrix} = \begin{bmatrix} T_{11} & T_{12} & T_{13} \\ T_{21} & T_{22} & T_{23} \\ T_{31} & T_{32} & T_{33} \end{bmatrix} \begin{bmatrix} i \\ j \\ k \end{bmatrix} $$
+3. **Visualization**: `IterationSpace.jsx` takes these transformed coordinates and maps them to 3D space, animating the transition from the old space to the new one.
+4. **Code Synthesis**: The engine reconstructs the loop bounds for the transformed space to produce optimized C code.
 
 ---
 
