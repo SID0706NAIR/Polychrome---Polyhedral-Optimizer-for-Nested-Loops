@@ -93,11 +93,22 @@ export const getInequalityLatex = (iMax, jMax, kMax, domainType = 'rectangular')
 };
 
 /**
- * Generates optimized C code based on the transformation matrix.
+ * Generates optimized C code based on the transformation matrix and domain type.
  */
-export const generateOptimizedCode = (iMax, jMax, kMax, matrix) => {
+export const generateOptimizedCode = (iMax, jMax, kMax, matrix, domainType = 'rectangular') => {
   const isMatrix = (m) => JSON.stringify(matrix) === JSON.stringify(m);
 
+  if (domainType === 'diamond') {
+    if (isMatrix(TRANSFORMATIONS.IDENTITY)) {
+      return `for (int i = -${iMax}; i <= ${iMax}; i++) {\n  for (int j = -( ${iMax} - abs(i)); j <= (${iMax} - abs(i)); j++) {\n    for (int k = -(${iMax} - abs(i) - abs(j)); k <= (${iMax} - abs(i) - abs(j)); k++) {\n      S(i, j, k);\n    }\n  }\n}`;
+    }
+    if (isMatrix(TRANSFORMATIONS.SKEW)) {
+       return `// Skewed Diamond Domain\nfor (int ip = -${iMax}; ip <= ${iMax}; ip++) {\n  for (int jp = ip - (${iMax} - abs(ip)); jp <= ip + (${iMax} - abs(ip)); jp++) {\n    int j = jp - ip;\n    for (int k = -(${iMax} - abs(ip) - abs(j)); k <= (${iMax} - abs(ip) - abs(j)); k++) {\n      S(ip, j, k);\n    }\n  }\n}`;
+    }
+    return "// Complex transformation on diamond domain: use polyhedral code generator (e.g. CLooG)";
+  }
+
+  // Rectangular cases
   if (isMatrix(TRANSFORMATIONS.IDENTITY)) {
     const kLoop = kMax > 0 ? `\n    for (int k = 0; k < ${kMax}; k++) {\n      C[i][j] += A[i][k] * B[k][j];\n    }` : `\n    S(i, j);`;
     return `for (int i = 0; i < ${iMax}; i++) {\n  for (int j = 0; j < ${jMax}; j++) {${kLoop}\n  }\n}`;
@@ -108,7 +119,7 @@ export const generateOptimizedCode = (iMax, jMax, kMax, matrix) => {
   }
 
   if (isMatrix(TRANSFORMATIONS.SKEW)) {
-    return `for (int ip = 0; ip < ${iMax}; ip++) {\n  for (int jp = ip; jp < ip + ${jMax}; jp++) {\n    S(ip, jp - ip);\n  }\n}`;
+    return `// Loop Skewing (i, j+i)\nfor (int ip = 0; ip < ${iMax}; ip++) {\n  for (int jp = ip; jp < ip + ${jMax}; jp++) {\n    S(ip, jp - ip);\n  }\n}`;
   }
 
   if (isMatrix(TRANSFORMATIONS.INTERCHANGE_IJ)) {

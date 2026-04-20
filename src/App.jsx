@@ -30,7 +30,10 @@ function App() {
   useEffect(() => {
     if (appliedCode.includes('abs(')) {
       setDomainType('diamond');
+      // For diamond, we use iMax as the radius N
       setIMax(4);
+      setJMax(4); // Ensure jMax/kMax are set for 3D logic
+      setKMax(4);
       return;
     }
 
@@ -43,12 +46,13 @@ function App() {
     const parseBound = (match) => {
       if (!match) return 0;
       if (match[1] === 'N') return 4;
-      return Math.min(10, parseInt(match[1])); 
+      const val = parseInt(match[1]);
+      return isNaN(val) ? 4 : Math.min(10, Math.abs(val)); 
     };
 
     setIMax(parseBound(iMatch) || 4);
     setJMax(parseBound(jMatch) || 4);
-    setKMax(parseBound(kMatch) || 4);
+    setKMax(parseBound(kMatch) || 0); // Default to 0 for 2D loops
   }, [appliedCode]);
 
 
@@ -70,8 +74,11 @@ function App() {
     setMatrix(TRANSFORMATIONS[type]);
   };
 
+  const [isWindowOpen, setIsWindowOpen] = useState(true);
+  const [windowHeight, setWindowHeight] = useState(220);
+
   return (
-    <div className="app-container" style={{ display: 'flex', height: '100vh', overflow: 'hidden' }}>
+    <div className="app-container" style={{ display: 'flex', height: '100vh', overflow: 'hidden', position: 'relative' }}>
       {/* Sidebar / Controls */}
       <aside className="glass-panel" style={{ width: '400px', margin: '20px', display: 'flex', flexDirection: 'column', zIndex: 10 }}>
         <header style={{ padding: '24px', borderBottom: '1px solid var(--border-color)' }}>
@@ -197,29 +204,65 @@ function App() {
            </div>
         </div>
 
-        <div className="glass-panel" style={{ position: 'absolute', bottom: '20px', right: '20px', left: '440px', padding: '24px', display: 'flex', gap: '24px', overflow: 'hidden' }}>
-          <div style={{ flex: 1 }}>
-             <h3 style={{ fontSize: '12px', color: 'var(--text-secondary)', marginBottom: '12px', textTransform: 'uppercase' }}>Original Code</h3>
-             <pre className="glass-panel" style={{ padding: '12px', background: 'rgba(0,0,0,0.4)', fontSize: '12px', color: '#888', border: '1px dashed var(--border-color)', whiteSpace: 'pre-wrap' }}>
-               {domainType === 'diamond' 
-                 ? appliedCode 
-                 : `for (int i = 0; i < ${iMax}; i++) {\n  for (int j = 0; j < ${jMax}; j++) {\n    S(i, j);\n  }\n}`}
-             </pre>
+        {/* Resizable/Toggleable Window */}
+        <div 
+          className="glass-panel" 
+          style={{ 
+            position: 'absolute', 
+            bottom: '20px', 
+            right: '20px', 
+            left: '440px', 
+            padding: isWindowOpen ? '24px' : '12px 24px',
+            display: 'flex', 
+            flexDirection: 'column',
+            gap: '16px', 
+            height: isWindowOpen ? `${windowHeight}px` : 'auto',
+            minHeight: isWindowOpen ? '150px' : '48px',
+            transition: 'all 0.3s ease-out',
+            overflow: 'hidden',
+            resize: isWindowOpen ? 'vertical' : 'none'
+          }}
+        >
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+              <Cpu size={16} color="var(--accent-color)" />
+              <h3 style={{ fontSize: '12px', color: 'var(--text-primary)', textTransform: 'uppercase', margin: 0 }}>Optimizer Workspace</h3>
+            </div>
+            <button 
+              onClick={() => setIsWindowOpen(!isWindowOpen)}
+              style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--accent-color)', display: 'flex', alignItems: 'center' }}
+            >
+              <RefreshCw size={14} style={{ marginRight: '8px', opacity: 0.5 }} />
+              <span style={{ fontSize: '10px', fontWeight: 700 }}>{isWindowOpen ? 'MINIMIZE' : 'EXPAND'}</span>
+            </button>
           </div>
 
-          <div style={{ display: 'flex', alignItems: 'center' }}>
-            <RefreshCw size={24} color="var(--accent-color)" />
-          </div>
+          {isWindowOpen && (
+            <div style={{ display: 'flex', gap: '24px', flex: 1, overflow: 'hidden' }}>
+              <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+                 <h3 style={{ fontSize: '11px', color: 'var(--text-secondary)', marginBottom: '8px', textTransform: 'uppercase' }}>Original Code</h3>
+                 <pre className="glass-panel" style={{ flex: 1, padding: '12px', background: 'rgba(0,0,0,0.4)', fontSize: '12px', color: '#888', border: '1px dashed var(--border-color)', whiteSpace: 'pre-wrap', overflowY: 'auto' }}>
+                   {domainType === 'diamond' 
+                     ? appliedCode 
+                     : `for (int i = 0; i < ${iMax}; i++) {\n  for (int j = 0; j < ${jMax}; j++) {\n    S(i, j);\n  }\n}`}
+                 </pre>
+              </div>
 
-          <div style={{ flex: 1 }}>
-             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-                <h3 style={{ fontSize: '12px', color: 'var(--accent-color)', textTransform: 'uppercase' }}>Optimized Output</h3>
-                <span style={{ fontSize: '10px', padding: '2px 8px', borderRadius: '4px', background: 'var(--accent-color)', color: '#fff' }}>POLYSYNC ACTIVE</span>
-             </div>
-             <pre className="glass-panel" style={{ padding: '12px', background: 'rgba(59, 130, 246, 0.05)', fontSize: '12px', color: 'var(--text-primary)', border: '1px solid var(--accent-glow)' }}>
-                {generateOptimizedCode(iMax, jMax, kMax, matrix, domainType)}
-             </pre>
-          </div>
+              <div style={{ display: 'flex', alignItems: 'center' }}>
+                <RefreshCw size={24} color="var(--accent-color)" />
+              </div>
+
+              <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                    <h3 style={{ fontSize: '11px', color: 'var(--accent-color)', textTransform: 'uppercase', margin: 0 }}>Optimized Output</h3>
+                    <span style={{ fontSize: '9px', padding: '2px 6px', borderRadius: '4px', background: 'var(--accent-color)', color: '#fff' }}>POLYSYNC ACTIVE</span>
+                 </div>
+                 <pre className="glass-panel" style={{ flex: 1, padding: '12px', background: 'rgba(59, 130, 246, 0.05)', fontSize: '12px', color: 'var(--text-primary)', border: '1px solid var(--accent-glow)', overflowY: 'auto' }}>
+                    {generateOptimizedCode(iMax, jMax, kMax, matrix, domainType)}
+                 </pre>
+              </div>
+            </div>
+          )}
         </div>
       </main>
     </div>
